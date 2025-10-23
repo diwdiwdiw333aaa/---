@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอปรายรับ-รายจ่าย (ออฟไลน์)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 3. กำหนดฟอนต์หลัก */
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* ปิดไฮไลท์ตอนกดบนมือถือ */
+        }
+        /* 4. ซ่อน/แสดง Modal */
+        #transaction-modal.hidden {
+            display: none;
+        }
+        .modal-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="container mx-auto max-w-2xl p-4 pb-24">
+
+        <header class="my-6">
+            <h1 class="text-4xl font-bold text-blue-600 text-center">บัญชีของฉัน</h1>
+            <p class="text-center text-gray-500 mt-2">เวอร์ชันออฟไลน์ (ใช้ Local Storage)</p>
+            
+            <div class="bg-white p-3 rounded-lg shadow-sm text-center mt-4">
+                <span class="text-xs text-gray-400">สถานะ:</span>
+                <span id="user-id-display" class="text-sm font-medium text-gray-600 break-all">Local Storage (ข้อมูลเก็บในเครื่องนี้)</span>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-5 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-base font-semibold text-gray-500">ยอดคงเหลือ</h2>
+                <p id="summary-balance" class="text-3xl font-bold text-blue-600 mt-2">0.00</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-base font-semibold text-green-600">รายรับ</h2>
+                <p id="summary-income" class="text-2xl font-bold text-green-600 mt-2">0.00</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-base font-semibold text-red-600">รายจ่าย</h2>
+                <p id="summary-expense" class="text-2xl font-bold text-red-600 mt-2">0.00</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-gray-800 mb-4">ประวัติรายการ</h2>
+            <div id="transaction-list" class="space-y-3">
+                <p id="loading-message" class="text-center text-gray-400 py-10">กำลังโหลดข้อมูล...</p>
+            </div>
+        </section>
+    </div>
+
+    <button id="add-button" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center transform transition-transform duration-200 active:scale-90">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    </button>
+
+    <div id="transaction-modal" class="fixed inset-0 z-50 hidden">
+        <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-40 modal-overlay"></div>
+        
+        <div class="relative w-full max-w-lg p-4 mx-auto mt-20">
+            <div id="modal-content" class="bg-white rounded-2xl shadow-xl p-6 modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">เพิ่มรายการใหม่</h3>
+                    <button id="close-modal-button" class="text-gray-400 hover:text-gray-600 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button id="modal-type-expense" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-red-500 text-white">
+                        รายจ่าย
+                    </button>
+                    <button id="modal-type-income" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-gray-200 text-gray-500">
+                        รายรับ
+                    </button>
+                </div>
+
+                <form id="transaction-form" class="space-y-4">
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">คำอธิบาย</label>
+                        <input type="text" id="description" placeholder="เช่น ค่ากาแฟ, เงินเดือน" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท)</label>
+                        <input type="number" id="amount" placeholder="0.00" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
+                        <input type="text" id="category" placeholder="เช่น อาหาร, เงินออม" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-bold shadow-md hover:bg-blue-700 transition-colors">
+                        บันทึก
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        
+        // --- Local State ---
+        let localTransactions = [];
+        let currentModalType = 'expense'; // 'expense' หรือ 'income'
+
+        // --- DOM Elements ---
+        const $ = (selector) => document.querySelector(selector);
+        const modal = $('#transaction-modal');
+        const modalOverlay = $('#modal-overlay');
+        const modalContent = $('#modal-content');
+        const addButton = $('#add-button');
+        const closeModalButton = $('#close-modal-button');
+        const transactionList = $('#transaction-list');
+        const transactionForm = $('#transaction-form');
+        const typeExpenseBtn = $('#modal-type-expense');
+        const typeIncomeBtn = $('#modal-type-income');
+        const descInput = $('#description');
+        const amountInput = $('#amount');
+        const categoryInput = $('#category');
+        const balanceEl = $('#summary-balance');
+        const incomeEl = $('#summary-income');
+        const expenseEl = $('#summary-expense');
+        const loadingMessage = $('#loading-message');
+        const userIdDisplay = $('#user-id-display'); // เปลี่ยนเป็นแสดงสถานะ Local Storage
+
+        // --- Functions for Local Storage ---
+        
+        /** 1. โหลดข้อมูลจาก Local Storage */
+        function loadTransactions() {
+            try {
+                const storedData = localStorage.getItem('transactions');
+                localTransactions = storedData ? JSON.parse(storedData) : [];
+                console.log("Loaded transactions from Local Storage:", localTransactions.length);
+            } catch (error) {
+                console.error("Error loading transactions from Local Storage:", error);
+                localTransactions = [];
+            }
+        }
+
+        /** 2. บันทึกข้อมูลไปยัง Local Storage */
+        function saveTransactions() {
+            try {
+                // เรียงลำดับข้อมูลก่อนบันทึก (ใหม่สุดไปเก่าสุด)
+                localTransactions.sort((a, b) => {
+                    return new Date(b.date) - new Date(a.date);
+                });
+                localStorage.setItem('transactions', JSON.stringify(localTransactions));
+                console.log("Saved transactions to Local Storage:", localTransactions.length);
+            } catch (error) {
+                console.error("Error saving transactions to Local Storage:", error);
+            }
+        }
+        
+        /** 3. เริ่มต้นแอปพลิเคชัน (แทนที่ initAuth) */
+        function initApp() {
+            loadTransactions(); // โหลดข้อมูลที่มีอยู่
+            updateUI(); // อัปเดตหน้าจอทันที
+        }
+
+        /** 4. อัปเดต UI ทั้งหมด (รายการ + สรุปยอด) */
+        function updateUI() {
+            renderTransactions();
+            updateSummary();
+        }
+
+        /** 5. แสดงผลรายการ (Transaction List) */
+        function renderTransactions() {
+            transactionList.innerHTML = ''; // ล้างของเก่า
+
+            if (localTransactions.length === 0) {
+                loadingMessage.textContent = "ยังไม่มีรายการ... กดปุ่ม + เพื่อเพิ่ม";
+                transactionList.appendChild(loadingMessage);
+                return;
+            }
+
+            // ลบข้อความกำลังโหลดออก
+            const existingLoadingMessage = $('#loading-message');
+            if(existingLoadingMessage) {
+                existingLoadingMessage.remove();
+            }
+
+            localTransactions.forEach(tx => {
+                const isIncome = tx.type === 'income';
+                const amountColor = isIncome ? 'text-green-600' : 'text-red-600';
+                const sign = isIncome ? '+' : '-';
+                const icon = isIncome ? 
+                    `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>` : 
+                    `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>`; 
+                
+                const date = new Date(tx.date);
+                const formattedDate = date.toLocaleDateString('th-TH', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+                const formattedCategory = tx.category || 'ทั่วไป';
+
+                const itemHtml = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center space-x-3 border border-gray-200">
+                        <div class="p-2 rounded-full ${isIncome ? 'bg-green-100' : 'bg-red-100'}">
+                            ${icon}
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">${tx.description}</p>
+                            <p class="text-sm text-gray-500">${formattedDate} • ${formattedCategory}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg ${amountColor}">${sign}${tx.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                        </div>
+                        <button class="delete-button text-gray-400 hover:text-red-500 p-2" data-id="${tx.id}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                `;
+                transactionList.insertAdjacentHTML('beforeend', itemHtml);
+            });
+
+            // เพิ่ม Event Listeners ให้ปุ่มลบ
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', handleDeleteTransaction);
+            });
+        }
+
+        /** 6. อัปเดตสรุปยอด (Summary Cards) */
+        function updateSummary() {
+            const totalIncome = localTransactions
+                .filter(tx => tx.type === 'income')
+                .reduce((sum, tx) => sum + tx.amount, 0);
+            
+            const totalExpense = localTransactions
+                .filter(tx => tx.type === 'expense')
+                .reduce((sum, tx) => sum + tx.amount, 0);
+
+            const balance = totalIncome - totalExpense;
+
+            const format = (num) => num.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            balanceEl.textContent = format(balance);
+            incomeEl.textContent = format(totalIncome);
+            expenseEl.textContent = format(totalExpense);
+            
+            balanceEl.classList.toggle('text-red-600', balance < 0);
+            balanceEl.classList.toggle('text-blue-600', balance >= 0);
+        }
+
+        /** 7. จัดการการเพิ่มรายการ (Form Submit) - ใช้ Local Array และ Save */
+        function handleAddTransaction(e) {
+            e.preventDefault();
+
+            const description = descInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const category = categoryInput.value.trim() || 'ทั่วไป';
+
+            if (!description || isNaN(amount) || amount <= 0) {
+                alert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (คำอธิบาย, จำนวนเงิน > 0)");
+                return;
+            }
+
+            // สร้าง ID ง่ายๆ แทน Firestore ID
+            const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+            
+            const newTransaction = {
+                id: newId,
+                description: description,
+                amount: amount,
+                category: category,
+                type: currentModalType,
+                date: new Date().toISOString() // ใช้ ISO string แทน Firebase Timestamp
+            };
+            
+            // เพิ่มเข้าใน Array
+            localTransactions.push(newTransaction);
+
+            // บันทึกและอัปเดต UI
+            saveTransactions(); 
+            updateUI(); 
+
+            hideModal();
+            transactionForm.reset();
+        }
+
+        /** 8. จัดการการลบรายการ - ใช้ Local Array และ Save */
+        function handleDeleteTransaction(e) {
+            const idToDelete = e.currentTarget.dataset.id;
+            
+            // กรองรายการที่ไม่ต้องการลบออก
+            const initialLength = localTransactions.length;
+            localTransactions = localTransactions.filter(tx => tx.id !== idToDelete);
+            
+            if (localTransactions.length < initialLength) {
+                // บันทึกและอัปเดต UI
+                saveTransactions();
+                updateUI(); 
+            }
+        }
+
+        /** 9. ควบคุม Modal */
+        function showModal() {
+            setModalType('expense');
+            transactionForm.reset();
+            modal.classList.remove('hidden');
+            // Animate
+            modalOverlay.style.opacity = 0;
+            modalContent.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                modalOverlay.style.opacity = 1;
+                modalContent.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function hideModal() {
+            modalOverlay.style.opacity = 0;
+            modalContent.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function setModalType(type) {
+            currentModalType = type;
+            if (type === 'income') {
+                typeIncomeBtn.className = 'py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-green-500 text-white';
+                typeExpenseBtn.className = 'py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-gray-200 text-gray-500';
+            } else { // expense
+                typeExpenseBtn.className = 'py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-red-500 text-white';
+                typeIncomeBtn.className = 'py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-gray-200 text-gray-500';
+            }
+        }
+
+        // --- Event Listeners ---
+        addButton.addEventListener('click', showModal);
+        closeModalButton.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
+        transactionForm.addEventListener('submit', handleAddTransaction);
+        
+        typeExpenseBtn.addEventListener('click', () => setModalType('expense'));
+        typeIncomeBtn.addEventListener('click', () => setModalType('income'));
+
+        // เริ่มต้นการทำงานของแอปเมื่อโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>
