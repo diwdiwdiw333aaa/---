@@ -3,29 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บัญชีรายรับ-รายจ่าย (Firebase)</title>
+    <title>บัญชีรายรับ-รายจ่าย (ออฟไลน์)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* 3. กำหนดฟอนต์หลัก */
+        /* กำหนดฟอนต์หลัก */
         body {
             font-family: 'Sarabun', 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent; /* ปิดไฮไลท์ตอนกดบนมือถือ */
+            -webkit-tap-highlight-color: transparent;
         }
-        /* 4. ซ่อน/แสดง Modal */
-        #transaction-modal.hidden {
-            display: none;
-        }
-        .modal-overlay {
-            transition: opacity 0.3s ease-in-out;
-        }
-        .modal-content {
-            transition: transform 0.3s ease-in-out;
-        }
-        /* 5. สไตล์สำหรับปุ่มนำทาง */
+        /* ซ่อน/แสดง Modal */
+        #transaction-modal.hidden { display: none; }
+        .modal-overlay { transition: opacity 0.3s ease-in-out; }
+        .modal-content { transition: transform 0.3s ease-in-out; }
+        /* สไตล์สำหรับปุ่มนำทาง */
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -40,11 +34,11 @@
     <section id="home-view" class="container mx-auto max-w-2xl p-4">
         <header class="my-6">
             <h1 class="text-4xl font-bold text-blue-600 text-center">บัญชีของฉัน</h1>
-            <p class="text-center text-gray-500 mt-2">เวอร์ชันออนไลน์ (ใช้ Firebase)</p>
+            <p class="text-center text-gray-500 mt-2">หน้าสรุปยอดและรายการล่าสุด</p>
             
             <div class="bg-white p-3 rounded-lg shadow-sm text-center mt-4">
-                <span class="text-xs text-gray-400">Your User ID:</span>
-                <span id="user-id-display" class="text-sm font-medium text-gray-600 break-all">กำลังโหลด...</span>
+                <span class="text-xs text-gray-400">สถานะ:</span>
+                <span id="user-id-display" class="text-sm font-medium text-gray-600 break-all">Local Storage (ข้อมูลเก็บในเครื่องนี้)</span>
             </div>
         </header>
 
@@ -126,8 +120,11 @@
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sort-header" data-sort="category">
                             หมวดหมู่ <span class="sort-icon"></span>
                         </th>
-                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sort-header" data-sort="amount">
-                            จำนวนเงิน (บาท) <span class="sort-icon"></span>
+                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sort-header" data-sort="incomeAmount">
+                            รายรับ (บาท) <span class="sort-icon"></span>
+                        </th>
+                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sort-header" data-sort="expenseAmount">
+                            รายจ่าย (บาท) <span class="sort-icon"></span>
                         </th>
                         <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer sort-header" data-sort="runningBalance">
                             เงินคงเหลือ <span class="sort-icon"></span>
@@ -138,7 +135,7 @@
                     </tr>
                 </thead>
                 <tbody id="table-body" class="bg-white divide-y divide-gray-200">
-                    <tr><td colspan="6" class="text-center text-gray-400 py-10">ไม่มีรายการ</td></tr>
+                    <tr><td colspan="7" class="text-center text-gray-400 py-10">ไม่มีรายการ</td></tr>
                 </tbody>
             </table>
         </div>
@@ -168,7 +165,6 @@
 
     <div id="transaction-modal" class="fixed inset-0 z-50 hidden">
         <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-40 modal-overlay"></div>
-        
         <div class="relative w-full max-w-lg p-4 mx-auto mt-20">
             <div id="modal-content" class="bg-white rounded-2xl shadow-xl p-6 modal-content">
                 <div class="flex justify-between items-center mb-6">
@@ -177,16 +173,10 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2 mb-4">
-                    <button id="modal-type-expense" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-red-500 text-white">
-                        รายจ่าย
-                    </button>
-                    <button id="modal-type-income" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-gray-200 text-gray-500">
-                        รายรับ
-                    </button>
+                    <button id="modal-type-expense" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-red-500 text-white">รายจ่าย</button>
+                    <button id="modal-type-income" class="py-3 px-4 rounded-lg font-bold text-lg transition-colors bg-gray-200 text-gray-500">รายรับ</button>
                 </div>
-
                 <form id="transaction-form" class="space-y-4">
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-1">คำอธิบาย</label>
@@ -200,51 +190,20 @@
                         <label for="category" class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
                         <input type="text" id="category" placeholder="เช่น อาหาร, เงินออม" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-bold shadow-md hover:bg-blue-700 transition-colors">
-                        บันทึก
-                    </button>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-bold shadow-md hover:bg-blue-700 transition-colors">บันทึก</button>
                 </form>
             </div>
         </div>
     </div>
     
-    <script type="module">
-        // 5. โหลด Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            addDoc, 
-            deleteDoc, 
-            onSnapshot, 
-            query, 
-            Timestamp,
-            setLogLevel
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Config (รับค่าจากสภาพแวดล้อม) ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // --- Firebase Globals ---
-        let app, db, auth;
-        let userId = null;
-        let unsubscribeFromTransactions = null;
-
+    <script>
+        
         // --- Local State ---
         let localTransactions = [];
         let currentModalType = 'expense';
         let currentSort = { key: 'date', direction: 'desc' }; // สำหรับตาราง
         let currentCalendarDate = new Date(); // สำหรับปฏิทิน
-
+        
         // --- DOM Elements ---
         const $ = (selector) => document.querySelector(selector);
         const $$ = (selector) => document.querySelectorAll(selector);
@@ -259,14 +218,13 @@
         const navCalendar = $('#nav-calendar');
         const navTable = $('#nav-table');
         const navItems = [navHome, navCalendar, navTable];
-        
+
         // Home View Elements
         const transactionList = $('#transaction-list');
         const balanceEl = $('#summary-balance');
         const incomeEl = $('#summary-income');
         const expenseEl = $('#summary-expense');
         const loadingMessage = $('#loading-message');
-        const userIdDisplay = $('#user-id-display');
 
         // Calendar View Elements
         const calendarGrid = $('#calendar-grid');
@@ -292,101 +250,48 @@
         const amountInput = $('#amount');
         const categoryInput = $('#category');
 
-        // --- Core Functions (Firebase remains the source of truth) ---
+        // --- Core Functions: Data Persistence (Local Storage) ---
 
-        /** 1. เริ่มต้นระบบ Authentication */
-        async function initAuth() {
-            if (!firebaseConfig.apiKey) {
-                console.error("Firebase config is missing!");
-                userIdDisplay.textContent = "ตั้งค่า Firebase ไม่ถูกต้อง";
-                loadingMessage.textContent = "ไม่สามารถเชื่อมต่อฐานข้อมูลได้";
-                return;
-            }
-
+        function loadTransactions() {
             try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('Debug');
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        subscribeToTransactions();
-                    } else {
-                        userId = null;
-                        userIdDisplay.textContent = "ไม่ได้เข้าสู่ระบบ";
-                        if (unsubscribeFromTransactions) {
-                            unsubscribeFromTransactions();
-                        }
-                    }
+                const storedData = localStorage.getItem('transactions');
+                localTransactions = storedData ? JSON.parse(storedData) : [];
+                localTransactions.forEach(tx => {
+                    // Ensure amount is a number after loading
+                    tx.amount = parseFloat(tx.amount); 
                 });
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                // เริ่มต้นที่ Home View
-                switchView('home-view');
-
             } catch (error) {
-                console.error("Error initializing Firebase Auth:", error);
-                userIdDisplay.textContent = "การยืนยันตัวตนล้มเหลว";
-                loadingMessage.textContent = "การยืนยันตัวตนล้มเหลว";
-            }
-        }
-
-        /** 2. ดึงข้อมูลแบบ Real-time */
-        function subscribeToTransactions() {
-            if (!userId) return;
-
-            if (unsubscribeFromTransactions) {
-                unsubscribeFromTransactions();
-            }
-
-            const collectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-            const q = query(collection(db, collectionPath));
-            
-            unsubscribeFromTransactions = onSnapshot(q, (querySnapshot) => {
+                console.error("Error loading transactions:", error);
                 localTransactions = [];
-                querySnapshot.forEach((doc) => {
-                    localTransactions.push({ id: doc.id, ...doc.data() });
-                });
-
-                // เรียงลำดับข้อมูลใน JavaScript (ใหม่สุดไปเก่าสุด) เพื่อให้ Home View แสดงล่าสุด
-                localTransactions.sort((a, b) => {
-                    const dateA = a.date?.toDate ? a.date.toDate() : new Date(0);
-                    const dateB = b.date?.toDate ? b.date.toDate() : new Date(0);
-                    return dateB - dateA;
-                });
-                
-                updateUI();
-
-            }, (error) => {
-                console.error("Error getting transactions snapshot:", error);
-                loadingMessage.textContent = "เกิดข้อผิดพลาดในการดึงข้อมูล";
-            });
+            }
         }
 
-        /** 3. อัปเดต UI ทั้งหมด (รายการ + สรุปยอด) */
+        function saveTransactions() {
+            try {
+                localStorage.setItem('transactions', JSON.stringify(localTransactions));
+            } catch (error) {
+                console.error("Error saving transactions:", error);
+            }
+        }
+        
+        function initApp() {
+            loadTransactions(); 
+            updateUI(); 
+            // เริ่มต้นที่ Home View
+            switchView('home-view'); 
+        }
+
         function updateUI() {
+            // เรียงข้อมูลล่าสุดไปก่อนเสมอสำหรับ Home View
+            localTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             updateSummary();
-            // เรียก render เฉพาะหน้าที่กำลังเปิดอยู่
-            const activeView = $('.container:not(.hidden)').id;
-            
-            if (activeView === 'home-view') renderHomeList();
-            else if (activeView === 'calendar-view') renderCalendar(currentCalendarDate);
-            else if (activeView === 'table-view') renderTable();
-            // เรียก render ทุกหน้าเมื่อมีการเปลี่ยนแปลงข้อมูล เพื่อให้หน้าอื่นพร้อมเมื่อสลับไป
             renderHomeList();
-            renderCalendar(currentCalendarDate);
+            // เรียก render ทุกหน้าเพื่อให้พร้อมเมื่อสลับ
+            renderCalendar(currentCalendarDate); 
             renderTable();
         }
 
-        /** 4. ควบคุมการสลับ View */
         function switchView(viewId) {
             // Hide all views
             [homeView, calendarView, tableView].forEach(view => view.classList.add('hidden'));
@@ -401,9 +306,8 @@
             $(`#nav-${viewId.split('-')[0]}`).classList.add('text-blue-600');
         }
 
-        // --- View 1: Home List & Summary (อัปเดตจากโค้ดเดิม) ---
+        // --- View 1: Home List & Summary ---
 
-        /** 5. อัปเดตสรุปยอด (Summary Cards) */
         function updateSummary() {
             const totalIncome = localTransactions
                 .filter(tx => tx.type === 'income')
@@ -424,8 +328,7 @@
             balanceEl.classList.toggle('text-red-600', balance < 0);
             balanceEl.classList.toggle('text-blue-600', balance >= 0);
         }
-        
-        /** 6. แสดงผลรายการล่าสุดใน Home View */
+
         function renderHomeList() {
             transactionList.innerHTML = ''; 
 
@@ -435,7 +338,7 @@
                 return;
             }
 
-            // แสดงเฉพาะ 5 รายการล่าสุด (localTransactions ถูกเรียงจากใหม่ไปเก่าแล้ว)
+            // แสดงเฉพาะ 5 รายการล่าสุด 
             const latestTransactions = localTransactions.slice(0, 5); 
 
             // ลบข้อความกำลังโหลดออก
@@ -448,19 +351,19 @@
 
             // Re-attach delete listeners
             document.querySelectorAll('#transaction-list .delete-button').forEach(button => {
+                button.removeEventListener('click', handleDeleteTransaction);
                 button.addEventListener('click', handleDeleteTransaction);
             });
         }
 
-        // --- View 2: Calendar View Logic ---
+        // --- View 2: Calendar View ---
         
         const THAI_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
         
         function getTransactionsByDate() {
             const map = {};
             localTransactions.forEach(tx => {
-                const date = tx.date?.toDate ? tx.date.toDate() : new Date();
-                const dateKey = date.toISOString().split('T')[0];
+                const dateKey = new Date(tx.date).toISOString().split('T')[0];
                 if (!map[dateKey]) map[dateKey] = [];
                 map[dateKey].push(tx);
             });
@@ -473,7 +376,7 @@
             const month = date.getMonth();
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            const startDayOfWeek = firstDay.getDay();
+            const startDayOfWeek = firstDay.getDay(); 
 
             calendarMonthYear.textContent = `${THAI_MONTHS[month]} ${year + 543}`;
             calendarGrid.innerHTML = `
@@ -486,6 +389,7 @@
                 <div class="text-blue-500 font-semibold py-2">ส</div>
             `;
             
+            // Empty slots for start of month
             for (let i = 0; i < startDayOfWeek; i++) {
                 calendarGrid.insertAdjacentHTML('beforeend', `<div class="py-2 text-gray-300"></div>`);
             }
@@ -497,13 +401,12 @@
                 const dateKey = currentDay.toISOString().split('T')[0];
                 const dayOfWeek = currentDay.getDay();
                 
-                // ต้องเปรียบเทียบแค่ปี, เดือน, วัน
                 const isToday = currentDay.toDateString() === today.toDateString();
                 const hasTransactions = transactionsMap[dateKey] && transactionsMap[dateKey].length > 0;
                 
                 let dayClass = 'text-gray-700';
-                if (dayOfWeek === 0) dayClass = 'text-red-500';
-                else if (dayOfWeek === 6) dayClass = 'text-blue-500';
+                if (dayOfWeek === 0) dayClass = 'text-red-500'; 
+                else if (dayOfWeek === 6) dayClass = 'text-blue-500'; 
 
                 let cellClass = 'py-2 rounded-lg cursor-pointer hover:bg-gray-100 relative';
                 
@@ -511,6 +414,7 @@
                 if (hasTransactions) cellClass += ' bg-yellow-100 font-semibold';
                 
                 let indicator = hasTransactions ? '<span class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></span>' : '';
+
 
                 const cellHtml = `
                     <div class="${cellClass} ${dayClass}" data-date="${dateKey}" data-has-transactions="${hasTransactions}">
@@ -531,7 +435,6 @@
             const selectedCell = $(`div[data-date='${selectedDateKey}']`);
             if(selectedCell) handleDateClick({ currentTarget: selectedCell });
             else {
-                // ถ้าวันที่ไม่ได้อยู่ในเดือนที่แสดง
                 calendarDetailHeader.textContent = `รายการในวันนี้`;
                 calendarDetailList.innerHTML = `<p class="text-gray-500">กรุณาเลือกวันในปฏิทิน</p>`;
             }
@@ -540,7 +443,7 @@
         function handleDateClick(e) {
             const dateKey = e.currentTarget.dataset.date;
             if (!dateKey) return;
-            
+
             // Update the current calendar date state
             currentCalendarDate = new Date(dateKey);
 
@@ -559,20 +462,14 @@
                 return;
             }
 
-            dailyTransactions
-                // Sort by time within the day (newest first)
-                .sort((a, b) => {
-                    const dateA = a.date?.toDate ? a.date.toDate() : new Date(0);
-                    const dateB = b.date?.toDate ? b.date.toDate() : new Date(0);
-                    return dateB - dateA;
-                })
-                .forEach(tx => {
-                    const itemHtml = createTransactionItem(tx);
-                    calendarDetailList.insertAdjacentHTML('beforeend', itemHtml);
-                });
+            dailyTransactions.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
+                const itemHtml = createTransactionItem(tx);
+                calendarDetailList.insertAdjacentHTML('beforeend', itemHtml);
+            });
 
             // Re-attach delete listeners
             document.querySelectorAll('#calendar-detail-list .delete-button').forEach(button => {
+                button.removeEventListener('click', handleDeleteTransaction);
                 button.addEventListener('click', handleDeleteTransaction);
             });
         }
@@ -588,31 +485,31 @@
             renderCalendar(currentCalendarDate);
         });
 
-        // --- View 3: Detailed Table View Logic ---
+        // --- View 3: Detailed Table View ---
 
         function renderTable() {
             tableBody.innerHTML = '';
             
             if (localTransactions.length === 0) {
-                tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="6" class="text-center text-gray-400 py-10">ไม่มีรายการ</td></tr>`);
+                // อัปเดต colspan เป็น 7
+                tableBody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" class="text-center text-gray-400 py-10">ไม่มีรายการ</td></tr>`);
                 return;
             }
 
             // 1. Sort chronologically (Oldest first) to calculate running balance
-            const chronologicalTransactions = [...localTransactions].sort((a, b) => {
-                const dateA = a.date?.toDate ? a.date.toDate() : new Date(0);
-                const dateB = b.date?.toDate ? b.date.toDate() : new Date(0);
-                return dateA - dateB; // เก่าไปใหม่
-            });
+            const chronologicalTransactions = [...localTransactions].sort((a, b) => new Date(a.date) - new Date(b.date));
             
             let currentBalance = 0;
-            // คำนวณยอดคงเหลือสะสม
+            // คำนวณยอดคงเหลือสะสม และแยกรายรับ/รายจ่าย
             const transactionsWithBalance = chronologicalTransactions.map(tx => {
-                const amountChange = tx.type === 'income' ? tx.amount : -tx.amount;
+                const isIncome = tx.type === 'income';
+                const amountChange = isIncome ? tx.amount : -tx.amount;
                 currentBalance += amountChange;
                 return { 
                     ...tx, 
-                    runningBalance: currentBalance 
+                    runningBalance: currentBalance, // เงินคงเหลือ
+                    incomeAmount: isIncome ? tx.amount : 0, // รายรับ
+                    expenseAmount: isIncome ? 0 : tx.amount // รายจ่าย
                 };
             });
 
@@ -622,27 +519,23 @@
                 let bVal = b[currentSort.key];
 
                 if (currentSort.key === 'date') {
-                    aVal = a.date?.toDate ? a.date.toDate() : new Date(0);
-                    bVal = b.date?.toDate ? b.date.toDate() : new Date(0);
+                    aVal = new Date(a.date);
+                    bVal = new Date(b.date);
                 }
 
                 if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
                 if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
                 
                 // Secondary sort by date (default to newest first if primary keys are equal)
-                const dateA = a.date?.toDate ? a.date.toDate() : new Date(0);
-                const dateB = b.date?.toDate ? b.date.toDate() : new Date(0);
-                return dateB - dateA; 
+                return new Date(b.date) - new Date(a.date); 
             });
 
+            const formatAmount = (num) => num.toLocaleString(undefined, { minimumFractionDigits: 2 });
 
             // 3. Render Rows
             sortedTransactions.forEach(tx => {
-                const isIncome = tx.type === 'income';
-                const amountClass = isIncome ? 'text-green-600' : 'text-red-600';
                 const balanceClass = tx.runningBalance < 0 ? 'text-red-600' : 'text-gray-900'; 
-                const sign = isIncome ? '+' : '-';
-                const date = tx.date?.toDate ? tx.date.toDate() : new Date();
+                const date = new Date(tx.date);
                 const formattedDate = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 const rowHtml = `
@@ -650,11 +543,14 @@
                         <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
                         <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${tx.description}</td>
                         <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${tx.category || 'ทั่วไป'}</td>
-                        <td class="px-3 py-3 whitespace-nowrap text-sm font-bold text-right ${amountClass}">
-                            ${sign}${tx.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-bold text-right ${tx.incomeAmount > 0 ? 'text-green-600' : 'text-gray-400'}">
+                            ${tx.incomeAmount > 0 ? formatAmount(tx.incomeAmount) : '-'}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-bold text-right ${tx.expenseAmount > 0 ? 'text-red-600' : 'text-gray-400'}">
+                            ${tx.expenseAmount > 0 ? formatAmount(tx.expenseAmount) : '-'}
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap text-sm font-bold text-right ${balanceClass}">
-                            ${tx.runningBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                            ${formatAmount(tx.runningBalance)}
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                             <button class="delete-button text-red-500 hover:text-red-700" data-id="${tx.id}">
@@ -682,6 +578,7 @@
 
             // Re-attach delete listeners
             document.querySelectorAll('#table-body .delete-button').forEach(button => {
+                button.removeEventListener('click', handleDeleteTransaction);
                 button.addEventListener('click', handleDeleteTransaction);
             });
         }
@@ -694,7 +591,7 @@
             } else {
                 currentSort.key = newSortKey;
                 // Default sort direction: date = newest first (desc), others = asc
-                currentSort.direction = newSortKey === 'date' || newSortKey === 'runningBalance' || newSortKey === 'amount' ? 'desc' : 'asc';
+                currentSort.direction = newSortKey === 'date' || newSortKey === 'runningBalance' || newSortKey === 'amount' || newSortKey === 'incomeAmount' || newSortKey === 'expenseAmount' ? 'desc' : 'asc';
             }
             renderTable();
         }
@@ -709,7 +606,7 @@
                 `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>` : 
                 `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>`; 
             
-            const date = tx.date?.toDate ? tx.date.toDate() : new Date();
+            const date = new Date(tx.date);
             const formattedDate = date.toLocaleDateString('th-TH', {
                 day: '2-digit', month: 'short', year: 'numeric'
             });
@@ -734,59 +631,57 @@
             `;
         }
 
-        // --- CRUD & Modal Logic (เดิม) ---
 
-        /** 7. จัดการการเพิ่มรายการ (Form Submit) */
-        async function handleAddTransaction(e) {
+        // --- Event Handlers (CRUD - Local Storage) ---
+
+        function handleAddTransaction(e) {
             e.preventDefault();
-            if (!userId) return;
 
-            const description = descInput.value;
+            const description = descInput.value.trim();
             const amount = parseFloat(amountInput.value);
-            const category = categoryInput.value || 'ทั่วไป';
+            const category = categoryInput.value.trim() || 'ทั่วไป';
 
             if (!description || isNaN(amount) || amount <= 0) {
-                console.warn("ข้อมูลไม่ถูกต้อง");
+                alert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (คำอธิบาย, จำนวนเงิน > 0)");
                 return;
             }
 
-            try {
-                const newTransaction = {
-                    description: description,
-                    amount: amount,
-                    category: category,
-                    type: currentModalType,
-                    date: Timestamp.now()
-                };
-                
-                const collectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                await addDoc(collection(db, collectionPath), newTransaction);
-                
-                hideModal();
-                transactionForm.reset();
-
-            } catch (error) {
-                console.error("Error adding transaction:", error);
-            }
-        }
-
-        /** 8. จัดการการลบรายการ */
-        async function handleDeleteTransaction(e) {
-            if (!userId) return;
-            const id = e.currentTarget.dataset.id;
+            // ใช้ timestamp + random ID เพื่อให้แน่ใจว่า ID ไม่ซ้ำกัน
+            const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 5); 
             
-            // ป้องกันการลบหากยังไม่โหลดข้อมูลครบ
-            if (!id) return;
+            const newTransaction = {
+                id: newId,
+                description: description,
+                amount: amount,
+                category: category,
+                type: currentModalType,
+                date: new Date().toISOString() // บันทึกวันที่ในรูปแบบ ISO string
+            };
+            
+            localTransactions.push(newTransaction);
+            saveTransactions(); 
+            updateUI(); 
 
-            try {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, id);
-                await deleteDoc(docRef);
-            } catch (error) {
-                console.error("Error deleting transaction:", error);
+            hideModal();
+            transactionForm.reset();
+        }
+
+        function handleDeleteTransaction(e) {
+            const idToDelete = e.currentTarget.dataset.id;
+            
+            if (!idToDelete) return;
+
+            const initialLength = localTransactions.length;
+            localTransactions = localTransactions.filter(tx => tx.id !== idToDelete);
+            
+            if (localTransactions.length < initialLength) {
+                saveTransactions();
+                updateUI(); 
             }
         }
 
-        /** 9. ควบคุม Modal */
+        // --- Modal & View Control ---
+
         function showModal() {
             setModalType('expense');
             transactionForm.reset();
@@ -827,7 +722,6 @@
         typeExpenseBtn.addEventListener('click', () => setModalType('expense'));
         typeIncomeBtn.addEventListener('click', () => setModalType('income'));
         
-        // Navigation Listeners
         navHome.addEventListener('click', () => switchView('home-view'));
         navCalendar.addEventListener('click', () => {
             switchView('calendar-view');
@@ -838,8 +732,9 @@
             renderTable();
         });
 
+
         // เริ่มต้นการทำงานของแอปเมื่อโหลดเสร็จ
-        document.addEventListener('DOMContentLoaded', initAuth);
+        document.addEventListener('DOMContentLoaded', initApp);
 
     </script>
 </body>
